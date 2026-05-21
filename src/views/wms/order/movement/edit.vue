@@ -1,12 +1,12 @@
 <template>
   <div>
     <div class="receipt-order-edit-wrapper app-container" style="margin-bottom: 60px" v-loading="loading">
-      <el-card header="移库单基本信息">
+      <el-card header="加工调拨信息">
         <el-form label-width="108px" :model="form" ref="movementForm" :rules="rules">
           <el-row :gutter="24">
             <el-col :span="11">
-              <el-form-item label="移库单号" prop="orderNo">
-                <el-input class="w200" v-model="form.orderNo" placeholder="移库单号"
+              <el-form-item label="调拨单号" prop="orderNo">
+                <el-input class="w200" v-model="form.orderNo" placeholder="调拨单号"
                           :disabled="form.id"></el-input>
               </el-form-item>
             </el-col>
@@ -201,7 +201,7 @@ const data = reactive({
   form: {...initFormData},
   rules: {
     orderNo: [
-      {required: true, message: "出库单号不能为空", trigger: "blur"}
+      {required: true, message: "调拨单号不能为空", trigger: "blur"}
     ],
     sourceWarehouseId: [
       {required: true, message: "请选择源仓库", trigger: ['blur', 'change']}
@@ -213,7 +213,7 @@ const data = reactive({
 });
 const {form, rules} = toRefs(data);
 const cancel = async () => {
-  await proxy?.$modal.confirm('确认取消编辑移库单吗？');
+  await proxy?.$modal.confirm('确认取消编辑加工调拨单吗？');
   close()
 }
 const close = () => {
@@ -362,7 +362,7 @@ const doMovement = async () => {
 }
 
 const updateToInvalid = async () => {
-  await proxy?.$modal.confirm('确认作废移库单吗？');
+  await proxy?.$modal.confirm('确认作废加工调拨单吗？');
   doSave(-1)
 }
 

@@ -1,12 +1,12 @@
 <template>
   <div>
     <div class="receipt-order-edit-wrapper app-container" style="margin-bottom: 60px" v-loading="loading">
-      <el-card header="出库单基本信息">
+      <el-card header="销售出仓信息">
         <el-form label-width="108px" :model="form" ref="shipmentForm" :rules="rules">
           <el-row :gutter="24">
             <el-col :span="11">
-              <el-form-item label="出库单号" prop="orderNo">
-                <el-input class="w200" v-model="form.orderNo" placeholder="出库单号"
+              <el-form-item label="出仓单号" prop="orderNo">
+                <el-input class="w200" v-model="form.orderNo" placeholder="出仓单号"
                           :disabled="form.id"></el-input>
               </el-form-item>
             </el-col>
@@ -220,7 +220,7 @@ const data = reactive({
   form: {...initFormData},
   rules: {
     orderNo: [
-      {required: true, message: "出库单号不能为空", trigger: "blur"}
+      {required: true, message: "出仓单号不能为空", trigger: "blur"}
     ],
     optType: [
       {required: true, message: "出库类型不能为空", trigger: "change"}
@@ -232,7 +232,7 @@ const data = reactive({
 });
 const {form, rules} = toRefs(data);
 const cancel = async () => {
-  await proxy?.$modal.confirm('确认取消编辑出库单吗？');
+  await proxy?.$modal.confirm('确认取消编辑销售出仓单吗？');
   close()
 }
 const close = () => {
@@ -271,7 +271,7 @@ const handleOkClick = (item) => {
 const shipmentForm = ref()
 
 const save = async () => {
-  await proxy?.$modal.confirm('确认暂存出库单吗？');
+  await proxy?.$modal.confirm('确认暂存销售出仓单吗？');
   doSave()
 }
 
@@ -375,7 +375,7 @@ const doShipment = async () => {
 }
 
 const updateToInvalid = async () => {
-  await proxy?.$modal.confirm('确认作废出库单吗？');
+  await proxy?.$modal.confirm('确认作废销售出仓单吗？');
   doSave(-1)
 }
 

@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-card>
       <el-form :model="queryParams" ref="queryRef" :inline="true" label-width="68px">
-        <el-form-item label="出库状态" prop="orderStatus">
+        <el-form-item label="出仓状态" prop="orderStatus">
           <el-radio-group v-model="queryParams.orderStatus" @change="handleQuery">
             <el-radio-button
               :key="-2"
@@ -19,7 +19,7 @@
             </el-radio-button>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="出库类型" prop="optType">
+        <el-form-item label="出仓类型" prop="optType">
           <el-radio-group v-model="queryParams.optType" @change="handleQuery">
             <el-radio-button
               :key="-1"
@@ -36,10 +36,10 @@
             </el-radio-button>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="出库单号" prop="orderNo">
+        <el-form-item label="出仓单号" prop="orderNo">
           <el-input
             v-model="queryParams.orderNo"
-            placeholder="请输入出库单号"
+            placeholder="请输入出仓单号"
             clearable
             @keyup.enter="handleQuery"
           />
@@ -62,7 +62,7 @@
     <el-card class="mt20">
 
       <el-row :gutter="10" class="mb8" type="flex" justify="space-between">
-        <el-col :span="6"><span style="font-size: large">出库单</span></el-col>
+        <el-col :span="6"><span class="page-title">销售出仓单</span></el-col>
         <el-col :span="1.5">
           <el-button
             type="primary"
@@ -73,14 +73,14 @@
           >新增</el-button>
         </el-col>
       </el-row>
-      <el-table v-loading="loading" :data="shipmentOrderList" border class="mt20" empty-text="暂无出库单" cell-class-name="vertical-top-cell">
+      <el-table v-loading="loading" :data="shipmentOrderList" border class="mt20" empty-text="暂无销售出仓单" cell-class-name="vertical-top-cell">
         <el-table-column label="单号/业务单号" align="left" min-width="120">
           <template #default="{ row }">
             <div>单号：{{ row.orderNo }}</div>
             <div v-if="row.bizOrderNo">业务单号：{{ row.bizOrderNo }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="仓库" align="left">
+        <el-table-column label="茶仓" align="left">
           <template #default="{ row }">
             <div>{{ useWmsStore().warehouseMap.get(row.warehouseId)?.warehouseName }}</div>
           </template>
@@ -97,7 +97,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="出库状态" align="center" prop="orderStatus" width="80">
+        <el-table-column label="出仓状态" align="center" prop="orderStatus" width="80">
           <template #default="{ row }">
             <dict-tag :options="wms_shipment_status" :value="row.orderStatus" />
           </template>
@@ -151,7 +151,7 @@
                 :width="300"
                 trigger="hover"
                 :disabled="scope.row.orderStatus === 0"
-                :content="'出库单【' + scope.row.orderNo + '】已' + (scope.row.orderStatus === 1 ? '出库' : '作废') + '，无法修改！' "
+                :content="'出仓单【' + scope.row.orderNo + '】已' + (scope.row.orderStatus === 1 ? '出仓' : '作废') + '，无法修改！' "
               >
                 <template #reference>
                   <el-button link type="primary" @click="handleUpdate(scope.row)" v-hasPermi="['wms:shipment:all']" :disabled="[-1, 1].includes(scope.row.orderStatus)">修改</el-button>
@@ -165,7 +165,7 @@
                 :width="300"
                 trigger="hover"
                 :disabled="[-1, 0].includes(scope.row.orderStatus)"
-                :content="'出库单【' + scope.row.orderNo + '】已出库，无法删除！' "
+                :content="'出仓单【' + scope.row.orderNo + '】已出仓，无法删除！' "
               >
                 <template #reference>
                   <el-button link type="danger" @click="handleDelete(scope.row)" v-hasPermi="['wms:shipment:all']" :disabled="scope.row.orderStatus === 1">删除</el-button>
@@ -262,7 +262,7 @@ function handleAdd() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value;
-  proxy.$modal.confirm('确认删除出库单【' + row.orderNo + '】吗？').then(function() {
+  proxy.$modal.confirm('确认删除销售出仓单【' + row.orderNo + '】吗？').then(function() {
     loading.value = true;
     return delShipmentOrder(_ids);
   }).then(() => {
@@ -343,7 +343,12 @@ function loadAllShipmentOrderDetail() {
 }
 getList();
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
+.page-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a4d2e;
+}
 .el-statistic__content {
   font-size: 14px;
 }

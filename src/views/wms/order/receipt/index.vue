@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-card>
       <el-form :model="queryParams" ref="queryRef" :inline="true" label-width="68px">
-        <el-form-item label="入库状态" prop="receiptOrderStatus">
+        <el-form-item label="入仓状态" prop="receiptOrderStatus">
           <el-radio-group v-model="queryParams.orderStatus" @change="handleQuery">
             <el-radio-button
               :key="-2"
@@ -19,7 +19,7 @@
             </el-radio-button>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="入库类型" prop="orderStatus">
+        <el-form-item label="入仓类型" prop="orderStatus">
           <el-radio-group v-model="queryParams.optType" @change="handleQuery">
             <el-radio-button
               :key="-1"
@@ -36,10 +36,10 @@
             </el-radio-button>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="入库单号" prop="orderNo">
+        <el-form-item label="入仓单号" prop="orderNo">
           <el-input
             v-model="queryParams.orderNo"
-            placeholder="请输入入库单号"
+            placeholder="请输入入仓单号"
             clearable
             @keyup.enter="handleQuery"
           />
@@ -62,7 +62,7 @@
     <el-card class="mt20">
 
       <el-row :gutter="10" class="mb8" type="flex" justify="space-between">
-        <el-col :span="6"><span style="font-size: large">入库单</span></el-col>
+        <el-col :span="6"><span class="page-title">采购入仓单</span></el-col>
         <el-col :span="1.5">
           <el-button
             type="primary"
@@ -74,14 +74,14 @@
         </el-col>
       </el-row>
 
-      <el-table v-loading="loading" :data="receiptOrderList" border class="mt20" empty-text="暂无入库单" cell-class-name="vertical-top-cell">
+      <el-table v-loading="loading" :data="receiptOrderList" border class="mt20" empty-text="暂无采购入仓单" cell-class-name="vertical-top-cell">
         <el-table-column label="单号/业务单号" align="left" min-width="120">
           <template #default="{ row }">
             <div>单号：{{ row.orderNo }}</div>
             <div v-if="row.bizOrderNo">业务单号：{{ row.bizOrderNo }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="仓库" align="left">
+        <el-table-column label="茶仓" align="left">
           <template #default="{ row }">
             <div>{{ useWmsStore().warehouseMap.get(row.warehouseId)?.warehouseName }}</div>
           </template>
@@ -98,7 +98,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="入库状态" align="center" prop="orderStatus" width="80">
+        <el-table-column label="入仓状态" align="center" prop="orderStatus" width="80">
           <template #default="{ row }">
             <dict-tag :options="wms_receipt_status" :value="row.orderStatus" />
           </template>
@@ -155,7 +155,7 @@
                 :width="300"
                 trigger="hover"
                 :disabled="scope.row.orderStatus === 0"
-                :content="'入库单【' + scope.row.orderNo + '】已' + (scope.row.orderStatus === 1 ? '入库' : '作废') + '，无法修改！' "
+                :content="'入仓单【' + scope.row.orderNo + '】已' + (scope.row.orderStatus === 1 ? '入仓' : '作废') + '，无法修改！' "
               >
                 <template #reference>
                   <el-button link type="primary" @click="handleUpdate(scope.row)" v-hasPermi="['wms:receipt:all']" :disabled="[-1, 1].includes(scope.row.orderStatus)">修改</el-button>
@@ -169,7 +169,7 @@
                 :width="300"
                 trigger="hover"
                 :disabled="[-1, 0].includes(scope.row.orderStatus)"
-                :content="'入库单【' + scope.row.orderNo + '】已入库，无法删除！' "
+                :content="'入仓单【' + scope.row.orderNo + '】已入仓，无法删除！' "
               >
                 <template #reference>
                   <el-button link type="danger" @click="handleDelete(scope.row)" v-hasPermi="['wms:receipt:all']" :disabled="scope.row.orderStatus === 1">删除</el-button>
@@ -267,7 +267,7 @@ function handleAdd() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value;
-  proxy.$modal.confirm('确认删除入库单【' + row.orderNo + '】吗？').then(function() {
+  proxy.$modal.confirm('确认删除采购入仓单【' + row.orderNo + '】吗？').then(function() {
     loading.value = true;
     delReceiptOrder(_ids).then(() => {
       proxy.$modal.msgSuccess("删除成功");
@@ -348,7 +348,12 @@ function loadAllReceiptOrderDetail() {
 }
 getList();
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
+.page-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a4d2e;
+}
 .el-statistic__content {
   font-size: 14px;
 }

@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-card>
       <el-form :model="queryParams" ref="queryRef" :inline="true" label-width="98px">
-        <el-form-item label="移库状态" prop="orderStatus">
+        <el-form-item label="调拨状态" prop="orderStatus">
           <el-radio-group v-model="queryParams.orderStatus" @change="handleQuery">
             <el-radio-button
               :key="-2"
@@ -19,10 +19,10 @@
             </el-radio-button>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="移库单号" prop="orderNo">
+        <el-form-item label="调拨单号" prop="orderNo">
           <el-input
             v-model="queryParams.orderNo"
-            placeholder="请输入移库单号"
+            placeholder="请输入调拨单号"
             clearable
             @keyup.enter="handleQuery"
           />
@@ -37,7 +37,7 @@
     <el-card class="mt20">
 
       <el-row :gutter="10" class="mb8" type="flex" justify="space-between">
-        <el-col :span="6"><span style="font-size: large">移库单</span></el-col>
+        <el-col :span="6"><span class="page-title">加工调拨单</span></el-col>
         <el-col :span="1.5">
           <el-button
             type="primary"
@@ -49,7 +49,7 @@
         </el-col>
       </el-row>
 
-      <el-table v-loading="loading" :data="movementOrderList" border class="mt20" empty-text="暂无移库单" cell-class-name="vertical-top-cell">
+      <el-table v-loading="loading" :data="movementOrderList" border class="mt20" empty-text="暂无加工调拨单" cell-class-name="vertical-top-cell">
         <el-table-column label="单号" align="left" prop="orderNo" min-width="100"/>
         <el-table-column label="源仓库" align="left">
           <template #default="{ row }">
@@ -61,7 +61,7 @@
             <div>{{ useWmsStore().warehouseMap.get(row.targetWarehouseId)?.warehouseName }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="移库状态" align="center" prop="orderStatus" width="80">
+        <el-table-column label="调拨状态" align="center" prop="orderStatus" width="80">
           <template #default="{ row }">
             <dict-tag :options="wms_movement_status" :value="row.orderStatus" />
           </template>
@@ -117,7 +117,7 @@
                 :width="300"
                 trigger="hover"
                 :disabled="scope.row.orderStatus === 0"
-                :content="'移库单【' + scope.row.orderNo + '】已' + (scope.row.orderStatus === 1 ? '移库' : '作废') + '，无法修改！' "
+                :content="'调拨单【' + scope.row.orderNo + '】已' + (scope.row.orderStatus === 1 ? '调拨' : '作废') + '，无法修改！' "
               >
                 <template #reference>
                   <el-button link type="primary" @click="handleUpdate(scope.row)" v-hasPermi="['wms:movement:all']" :disabled="[-1, 1].includes(scope.row.orderStatus)">修改</el-button>
@@ -131,7 +131,7 @@
                 :width="300"
                 trigger="hover"
                 :disabled="[-1, 0].includes(scope.row.orderStatus)"
-                :content="'移库单【' + scope.row.orderNo + '】已移库，无法删除！' "
+                :content="'调拨单【' + scope.row.orderNo + '】已调拨，无法删除！' "
               >
                 <template #reference>
                   <el-button link type="danger" @click="handleDelete(scope.row)" v-hasPermi="['wms:movement:all']" :disabled="scope.row.orderStatus === 1">删除</el-button>
@@ -228,7 +228,7 @@ function handleAdd() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value;
-  proxy.$modal.confirm('确认删除移库单【' + row.orderNo + '】吗？').then(function() {
+  proxy.$modal.confirm('确认删除加工调拨单【' + row.orderNo + '】吗？').then(function() {
     loading.value = true;
     return delMovementOrder(_ids);
   }).then(() => {
@@ -308,7 +308,12 @@ function loadAllMovementOrderDetail() {
 }
 getList();
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
+.page-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a4d2e;
+}
 .el-statistic__content {
   font-size: 14px;
 }
