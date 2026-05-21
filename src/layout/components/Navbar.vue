@@ -5,7 +5,10 @@
     <top-nav id="topmenu-container" class="topmenu-container" v-if="settingsStore.topNav" />
 
     <div class="right-menu">
-      <div style="font-size: 16px;font-weight: bold;margin-right: 10px;">技术支持：关注“程序员诚哥”微信公众号，回复：支持</div>
+      <div class="brand-block">
+        <img src="@/assets/logo/tea-logo.svg" alt="茶叶Logo" class="brand-logo" />
+        <span>国茶经营管理系统</span>
+      </div>
       <div class="avatar-container">
         <el-dropdown @command="handleCommand" class="right-menu-item hover-effect" trigger="click">
           <div class="avatar-wrapper">
@@ -120,9 +123,25 @@ function setLayout() {
     height: 100%;
     line-height: 50px;
     display: flex;
+    align-items: center;
 
     &:focus {
       outline: none;
+    }
+
+    .brand-block {
+      display: flex;
+      align-items: center;
+      margin-right: 10px;
+      font-size: 14px;
+      color: #2f6b2f;
+      font-weight: 600;
+
+      .brand-logo {
+        width: 26px;
+        height: 26px;
+        margin-right: 8px;
+      }
     }
 
     .right-menu-item {

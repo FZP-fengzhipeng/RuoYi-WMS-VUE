@@ -1,15 +1,29 @@
 <template>
-  <div class="app-container">
+  <div class="app-container item-page">
     <el-card>
-      <el-form :model="queryParams" ref="queryFormRef" :inline="true" label-width="68px">
-        <el-form-item label="商品编号" prop="itemCode">
-          <el-input v-model="queryParams.itemCode" placeholder="请输入商品编号" clearable @keyup.enter="handleQuery"/>
+      <el-form :model="queryParams" ref="queryFormRef" :inline="true" label-width="72px">
+        <el-form-item label="茶品编码" prop="itemCode">
+          <el-input v-model="queryParams.itemCode" placeholder="请输入茶品编码" clearable @keyup.enter="handleQuery"/>
         </el-form-item>
-        <el-form-item label="商品名称" prop="itemName">
-          <el-input v-model="queryParams.itemName" placeholder="请输入商品名称" clearable @keyup.enter="handleQuery"/>
+        <el-form-item label="茶品名称" prop="itemName">
+          <el-input v-model="queryParams.itemName" placeholder="请输入茶品名称" clearable @keyup.enter="handleQuery"/>
         </el-form-item>
-        <el-form-item label="商品品牌" prop="itemBrand">
-          <el-select v-model="queryParams.itemBrand" clearable filterable>
+        <el-form-item label="茶类" prop="itemCategory">
+          <el-tree-select
+            v-model="queryParams.itemCategory"
+            :data="itemCategoryTreeSelectList"
+            :props="{ value: 'id', label: 'label', children: 'children' }"
+            value-key="id"
+            placeholder="全部茶类"
+            check-strictly
+            clearable
+            filterable
+            style="width: 200px"
+            @change="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="品牌产地" prop="itemBrand">
+          <el-select v-model="queryParams.itemBrand" clearable filterable placeholder="全部品牌" style="width: 160px">
             <el-option
               v-for="item in useWmsStore().itemBrandList"
               :key="item.id"
@@ -25,124 +39,134 @@
       </el-form>
     </el-card>
     <el-card class="mt20">
-      <div style="display: flex;align-items: start">
-        <div>
-          <div style="display: flex;align-items: center;justify-content: space-between">
-            <span style="font-size: 18px;line-height: 18px">商品分类</span>
-            <el-button class="mr10" style="font-size:12px;line-height: 14px" plain
-                     @click="handleAddType(false)"
-                     type="primary" icon="Plus">新增分类
-            </el-button>
-          </div>
-          <el-tree
-            :data="itemCategoryTreeOptionsList"
-            :props="{ value: 'id', label: 'label', children: 'children' }"
-            value-key="id"
-            style="width: 400px;"
-            class="mr10 mt10"
-            @nodeClick="handleQueryType"
-            :default-expand-all="true"
-            :highlight-current="true"
-            node-key="label"
-            current-node-key="全部"
-            draggable
-            :allow-drop="collapse"
-            @node-drop="handleNodeDrop"
-            :expand-on-click-node="false"
-          >
-            <template #default="{ node, data }">
-            <span class="custom-tree-node">
-              <span>{{ node.label }}</span>
-              <span>
-                <el-button type="primary" @click.stop="append(data)" link
-                         v-if="data.label !== '全部' && node.level < 2" icon="Plus" style="font-size: 12px">新增子分类</el-button>
-                <el-button type="primary" @click.stop="remove(node, data)" link
-                         v-if="data.label !== '全部'" icon="Delete" style="font-size: 12px">删除</el-button>
-                <el-button type="primary" icon="Edit" @click.stop="edit(node, data)" link
-                         v-if="data.label !== '全部'" style="font-size: 12px">修改</el-button>
-              </span>
-            </span>
-            </template>
-          </el-tree>
-        </div>
-        <div style="width: 100%;position: relative">
-          <div style="display: flex;align-items: start;justify-content: space-between">
-            <span class="mr10" style="font-size: 18px;">商品列表</span>
-            <el-button type="primary" plain icon="Plus" @click="handleAdd" class="mb10">新增商品</el-button>
-          </div>
-          <el-table :data="itemList" @selection-change="handleSelectionChange" :span-method="spanMethod" border empty-text="暂无商品" v-loading="loading" cell-class-name="my-cell">
-            <el-table-column label="商品信息" prop="itemId">
-              <template #default="{ row }">
-                <div>{{ row.item.itemName + (row.item.itemCode ? ('(' +  row.item.itemCode + ')') : '') }}</div>
-                <div v-if="row.item.itemBrand">{{ row.item.itemBrand ? ('品牌：' + useWmsStore().itemBrandMap.get(row.item.itemBrand)?.brandName) : '' }}</div>
-                <div v-if="row.item.itemCategory">{{ row.item.itemCategory ? ('分类：' + useWmsStore().itemCategoryMap.get(row.item.itemCategory)?.categoryName) : '' }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column label="规格信息" prop="skuName" align="left">
-              <template #default="{ row }">
-                <div>{{ row.itemSku.skuName }}</div>
-                <div v-if="row.itemSku.skuCode">编号：{{ row.itemSku.skuCode }}</div>
-                <div v-if="row.itemSku.barcode">条码：{{ row.itemSku.barcode }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column label="金额(元)" width="160" align="left">
-              <template #default="{ row }">
-                <div v-if="row.itemSku.costPrice" class="flex-space-between">
-                  <span>成本价：</span>
-                  <div>{{ (row.itemSku.costPrice || row.itemSku.costPrice === 0) ? row.itemSku.costPrice : '' }}</div>
-                </div>
-                <div v-if="row.itemSku.sellingPrice" class="flex-space-between">
-                  <span>销售价：</span>
-                  <div>{{ (row.itemSku.sellingPrice || row.itemSku.sellingPrice === 0) ? row.itemSku.sellingPrice : '' }}</div>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="重量(kg)" width="160" align="left">
-              <template #default="{ row }">
-                <div v-if="row.itemSku.netWeight" class="flex-space-between">
-                  <span>净重：</span>
-                  <div>
-                    {{ (row.itemSku.netWeight || row.itemSku.netWeight === 0) ? row.itemSku.netWeight : '' }}
-                  </div>
-                </div>
-                <div v-if="row.itemSku.grossWeight" class="flex-space-between">
-                  <span>毛重：</span>
-                  <div>
-                    {{ (row.itemSku.grossWeight || row.itemSku.grossWeight === 0) ? row.itemSku.grossWeight : '' }}
-                  </div>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="长宽高(cm)" align="right" width="250">
-              <template #default="{ row }">
-                <div>{{ getVolumeText(row.itemSku) }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" align="right" prop="itemId" width="200">
-              <template #default="scope">
-                <el-button link type="primary" @click="handleDelete(scope.row)" icon="Delete">删除</el-button>
-                <el-button link type="primary" @click="handleUpdate(scope.row)" icon="Edit">修改</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-          <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum"
-                      v-model:limit="queryParams.pageSize" @pagination="getList"/>
+      <div class="list-toolbar">
+        <span class="list-title">茶品列表</span>
+        <div class="list-actions">
+          <el-button icon="Menu" @click="categoryDrawerVisible = true">分类管理</el-button>
+          <el-button type="primary" plain icon="Plus" @click="handleAdd">新增茶品</el-button>
         </div>
       </div>
+      <el-table
+        :data="itemList"
+        @selection-change="handleSelectionChange"
+        border
+        empty-text="暂无茶品"
+        v-loading="loading"
+        size="small"
+        class="item-flat-table"
+      >
+        <el-table-column label="茶品名称" prop="itemName" min-width="120" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.item.itemName }}</template>
+        </el-table-column>
+        <el-table-column label="编码" prop="itemCode" width="110" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.item.itemCode || '—' }}</template>
+        </el-table-column>
+        <el-table-column label="茶类" width="100" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.item.itemCategory ? useWmsStore().itemCategoryMap.get(row.item.itemCategory)?.categoryName : '—' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="品牌产地" width="110" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.item.itemBrand ? useWmsStore().itemBrandMap.get(row.item.itemBrand)?.brandName : '—' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="产区" prop="teaOrigin" width="100" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.item.teaOrigin || '—' }}</template>
+        </el-table-column>
+        <el-table-column label="等级" prop="teaLevel" width="72" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.item.teaLevel" size="small" type="success">{{ row.item.teaLevel }}</el-tag>
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="规格" prop="skuName" min-width="100" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.itemSku.skuName }}</template>
+        </el-table-column>
+        <el-table-column label="规格编号" width="110" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.itemSku.skuCode || '—' }}</template>
+        </el-table-column>
+        <el-table-column label="条码" width="120" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.itemSku.barcode || '—' }}</template>
+        </el-table-column>
+        <el-table-column label="成本价" width="88" align="right">
+          <template #default="{ row }">
+            {{ formatPrice(row.itemSku.costPrice) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="销售价" width="88" align="right">
+          <template #default="{ row }">
+            {{ formatPrice(row.itemSku.sellingPrice) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="净重(kg)" width="88" align="right">
+          <template #default="{ row }">
+            {{ formatWeight(row.itemSku.netWeight) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" align="center" width="140" fixed="right">
+          <template #default="scope">
+            <el-button link type="primary" @click="handleUpdate(scope.row)" icon="Edit">修改</el-button>
+            <el-button link type="danger" @click="handleDelete(scope.row)" icon="Delete">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum"
+                  v-model:limit="queryParams.pageSize" @pagination="getList"/>
     </el-card>
-    <!-- 添加或修改物料对话框 -->
+
+    <!-- 茶类分类管理抽屉 -->
+    <el-drawer v-model="categoryDrawerVisible" title="茶类分类管理" size="400px" append-to-body>
+      <div class="category-drawer-toolbar">
+        <el-button type="primary" plain icon="Plus" @click="handleAddType(false)">新增分类</el-button>
+        <span class="category-drawer-tip">点击分类名称可筛选茶品；拖拽可排序</span>
+      </div>
+      <el-tree
+        :data="itemCategoryTreeOptionsList"
+        :props="{ value: 'id', label: 'label', children: 'children' }"
+        value-key="id"
+        class="category-drawer-tree"
+        @node-click="handleCategoryNodeClick"
+        :default-expand-all="true"
+        :highlight-current="true"
+        node-key="label"
+        draggable
+        :allow-drop="collapse"
+        @node-drop="handleNodeDrop"
+        :expand-on-click-node="false"
+      >
+        <template #default="{ node, data }">
+          <span class="category-tree-node">
+            <span class="category-tree-label">{{ node.label }}</span>
+            <el-dropdown
+              v-if="data.label !== '全部'"
+              trigger="click"
+              @command="(cmd) => handleCategoryCommand(cmd, node, data)"
+            >
+              <el-button link type="primary" icon="MoreFilled" class="category-tree-more" @click.stop />
+              <template #dropdown>
+                <el-dropdown-item v-if="node.level < 2" command="append">新增子分类</el-dropdown-item>
+                <el-dropdown-item command="edit">修改</el-dropdown-item>
+                <el-dropdown-item command="remove" divided>删除</el-dropdown-item>
+              </template>
+            </el-dropdown>
+          </span>
+        </template>
+      </el-tree>
+    </el-drawer>
+    <!-- 添加或修改茶品对话框 -->
     <el-drawer :title="dialog.title" v-model="dialog.visible" size="80%" append-to-body :close-on-click-modal="false">
       <div v-loading="skuLoading">
         <el-card>
           <el-form ref="itemFormRef" :model="form" :rules="rules" label-width="108px">
             <el-row :gutter="24">
               <el-col :span="12">
-                <el-form-item label="商品名称" prop="itemName">
+                <el-form-item label="茶品名称" prop="itemName">
                   <el-input v-model="form.itemName" placeholder="请输入名称"/>
                 </el-form-item>
               </el-col>
               <el-col :span="10">
-                <el-form-item label="商品分类" prop="itemCategory">
+                <el-form-item label="茶类分类" prop="itemCategory">
                   <el-tree-select
                     ref="treeRef"
                     v-model="form.itemCategory"
@@ -157,25 +181,25 @@
               </el-col>
               <el-col :span="1">
                 <el-button link icon="Plus" type="primary" style="height: 32px!important;line-height: 32px!important;"
-                           @click="handleAddType(true)">新增分类
+                           @click="handleAddType(true)">新增茶类
                 </el-button>
               </el-col>
             </el-row>
             <el-row :gutter="24">
               <el-col :span="12">
-                <el-form-item label="商品编号" prop="itemCode">
+                <el-form-item label="茶品编码" prop="itemCode">
                   <el-input v-model="form.itemCode" placeholder="请输入编号"/>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="商品单位" prop="unit">
-                  <el-input v-model="form.unit" placeholder="请输入单位类别"/>
+                <el-form-item label="计量单位" prop="unit">
+                  <el-input v-model="form.unit" placeholder="请输入计量单位"/>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="24">
               <el-col :span="12">
-                <el-form-item label="商品品牌" prop="itemBrand">
+                <el-form-item label="品牌产地" prop="itemBrand">
                   <el-select v-model="form.itemBrand" clearable filterable style="width: 100%!important;">
                     <el-option
                       v-for="item in useWmsStore().itemBrandList"
@@ -184,6 +208,28 @@
                       :value="item.id"
                     ></el-option>
                   </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="茶类代码" prop="teaType">
+                  <el-input v-model="form.teaType" placeholder="例如 green / black / oolong"/>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="24">
+              <el-col :span="12">
+                <el-form-item label="茶叶产区" prop="teaOrigin">
+                  <el-input v-model="form.teaOrigin" placeholder="请输入中国茶产区"/>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="茶叶等级" prop="teaLevel">
+                  <el-input v-model="form.teaLevel" placeholder="例如 S/A/B"/>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="采摘季" prop="harvestSeason">
+                  <el-input v-model="form.harvestSeason" placeholder="例如 mingqian"/>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -264,13 +310,13 @@
               </el-table-column>
               <template #append v-if="skuForm.itemSkuList.length">
                 <div style="padding: 6px 2px 6px 2px;text-align: center;">
-                  <el-button text class="add-btn" icon="Plus" type="primary" @click="onAppendBtnClick">添加商品规格
+                  <el-button text class="add-btn" icon="Plus" type="primary" @click="onAppendBtnClick">添加茶品规格
                   </el-button>
                 </div>
               </template>
               <template #empty>
                 <div style="padding: 2px 2px 6px 2px;text-align: center;width: 100%!important;">
-                  <el-button text class="add-btn" icon="Plus" type="primary" @click="onAppendBtnClick">添加商品规格
+                  <el-button text class="add-btn" icon="Plus" type="primary" @click="onAppendBtnClick">添加茶品规格
                   </el-button>
                 </div>
               </template>
@@ -286,7 +332,7 @@
         </div>
       </template>
     </el-drawer>
-    <!-- 添加或修改物料类型对话框 -->
+    <!-- 添加或修改茶类对话框 -->
     <el-dialog :title="categoryDialog.title" v-model="categoryDialog.visible" width="500px" append-to-body
                :close-on-click-modal="false">
       <el-form ref="itemCategoryFormRef" :model="categoryForm" :rules="typeRules" label-width="128px" @submit.native.prevent>
@@ -302,8 +348,8 @@
             clearable
           />
         </el-form-item>
-        <el-form-item label="商品分类名称" prop="categoryName">
-          <el-input v-model="categoryForm.categoryName" placeholder="请输入商品分类名称" @keyup.enter="submitCategoryForm"/>
+        <el-form-item label="茶类分类名称" prop="categoryName">
+          <el-input v-model="categoryForm.categoryName" placeholder="请输入茶类分类名称" @keyup.enter="submitCategoryForm"/>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -331,7 +377,6 @@ import {
   delItemCategory,
   updateOrderNum
 } from "@/api/wms/itemCategory";
-import {getRowspanMethod} from "@/utils/getRowSpanMethod";
 import {listItemSkuPage, delItemSku, listItemSku} from "@/api/wms/itemSku";
 import {useRoute} from "vue-router";
 import Qrcode from 'qrcode'
@@ -363,9 +408,17 @@ const skuLoading = ref(false)
 const queryFormRef = ref(ElForm);
 const itemFormRef = ref(ElForm);
 const itemCategoryFormRef = ref(ElForm);
-const spanMethod = computed(() => getRowspanMethod(itemList.value, rowSpanArray.value))
-const rowSpanArray = ref(['itemId'])
+const categoryDrawerVisible = ref(false)
 const qrcode = ref(null)
+
+const formatPrice = (val) => {
+  if (val === 0 || val) return Number(val).toFixed(2)
+  return '—'
+}
+const formatWeight = (val) => {
+  if (val === 0 || val) return val
+  return '—'
+}
 const append = (data) => {
   // resetType();
   categoryForm.value.categoryName = undefined;
@@ -388,7 +441,7 @@ const edit = (node, data) => {
   categoryForm.value.id = data.id;
   // resetType();
   categoryForm.value.categoryName = data.label;
-  categoryDialog.title = "修改商品分类";
+  categoryDialog.title = "修改茶类分类";
   categoryDialog.visible = true;
 }
 const dialog = reactive({
@@ -407,6 +460,10 @@ const initFormData = {
   itemCategory: undefined,
   unit: undefined,
   itemBrand: undefined,
+  teaType: undefined,
+  teaOrigin: undefined,
+  teaLevel: undefined,
+  harvestSeason: undefined,
   remark: undefined,
 }
 const initCategoryFormData = {
@@ -424,7 +481,8 @@ const data = reactive({
     pageSize: 10,
     itemCode: undefined,
     itemName: undefined,
-    itemType: undefined
+    itemCategory: undefined,
+    itemBrand: undefined
   },
   rules: {
     id: [
@@ -459,16 +517,16 @@ const categoryData = reactive({
   },
   rules: {
     id: [
-      {required: true, message: "商品分类id不能为空", trigger: "blur"}
+      {required: true, message: "茶类分类id不能为空", trigger: "blur"}
     ],
     // parentId: [
     //   {required: true, message: "父物料类型id不能为空", trigger: "blur"}
     // ],
     categoryName: [
-      {required: true, message: "商品分类名称不能为空", trigger: "blur"}
+      {required: true, message: "茶类分类名称不能为空", trigger: "blur"}
     ],
     status: [
-      {required: true, message: "商品分类状态不能为空", trigger: "change"}
+      {required: true, message: "茶类分类状态不能为空", trigger: "change"}
     ],
   }
 });
@@ -476,7 +534,7 @@ const {queryParams, form, rules} = toRefs(data);
 
 const {queryParams: typeQueryParams, form: categoryForm, rules: typeRules} = toRefs(categoryData);
 const currentType = ref()
-/** 查询物料列表 */
+/** 查询茶品列表 */
 const getList = async () => {
   loading.value = true;
   const res = await listItemSkuPage(queryParams.value);
@@ -486,7 +544,7 @@ const getList = async () => {
   loading.value = false;
 }
 const handleAddType = (show) => {
-  categoryDialog.title = "新增商品分类";
+  categoryDialog.title = "新增茶类分类";
   showParent.value = show
   categoryDialog.visible = true;
   if (show) {
@@ -534,7 +592,7 @@ const handleDeleteItemSku = async (row, index) => {
     return
   }
   if (skuForm.itemSkuList.length === 1) {
-    return proxy?.$modal.msgError("至少包含一个商品规格");
+    return proxy?.$modal.msgError("至少包含一个茶品规格");
   }
   await proxy?.$modal.confirm('确认删除规格【' + row.skuName + '】吗？');
   loading.value = true;
@@ -607,7 +665,7 @@ const handleSelectionChange = (selection) => {
 const handleAdd = () => {
   resetItemSkuList()
   dialog.visible = true;
-  dialog.title = "新增商品";
+  dialog.title = "新增茶品";
   nextTick(async () => {
     reset();
   });
@@ -617,7 +675,7 @@ const handleUpdate = (row) => {
   resetItemSkuList()
   skuLoading.value = true
   dialog.visible = true;
-  dialog.title = "修改商品";
+  dialog.title = "修改茶品";
   nextTick(async () => {
     reset();
     const _id = row?.itemId || ids.value[0]
@@ -627,17 +685,23 @@ const handleUpdate = (row) => {
     Object.assign(form.value, row.item);
   });
 }
-const handleQueryType = (node, data) => {
+const handleCategoryNodeClick = (data) => {
   queryParams.value.pageNum = 1
-  if (data.data.label === '全部') {
-    queryParams.value.itemCategory = '';
-    currentType.value = '';
-    getList();
+  if (data.label === '全部' || data.id === -1) {
+    queryParams.value.itemCategory = undefined
+    currentType.value = ''
   } else {
-    queryParams.value.itemCategory = data.data.id;
-    currentType.value = data.data.id;
-    getList();
+    queryParams.value.itemCategory = data.id
+    currentType.value = data.id
   }
+  getList()
+  categoryDrawerVisible.value = false
+}
+
+const handleCategoryCommand = (cmd, node, data) => {
+  if (cmd === 'append') append(data)
+  else if (cmd === 'edit') edit(node, data)
+  else if (cmd === 'remove') remove(node, data)
 }
 /** 提交按钮 */
 const submitForm = () => {
@@ -646,7 +710,7 @@ const submitForm = () => {
     if (valid) {
       let flag = true
       if (!skuForm.itemSkuList || skuForm.itemSkuList.length === 0) {
-        proxy?.$modal.msgError("至少包含一个商品规格");
+        proxy?.$modal.msgError("至少包含一个茶品规格");
         flag = false
       }
       await skuFormRef.value.validate((valid2) => {
@@ -687,7 +751,7 @@ const submitCategoryForm = () => {
 /** 删除按钮操作 */
 const handleDelete = async (row) => {
   const _ids = row?.itemId || ids.value;
-  await proxy?.$modal.confirm('确认删除商品【' + row?.item.itemName + '】吗？');
+  await proxy?.$modal.confirm('确认删除茶品【' + row?.item.itemName + '】吗？');
   loading.value = true;
   await delItem(_ids).finally(()=> loading.value = false);
   proxy?.$modal.msgSuccess("删除成功");
@@ -728,14 +792,6 @@ const downloadQrcode = async (row) => {
   //提示信息
   // this.$message.warn('下载中，请稍后...')
 }
-const getVolumeText = (itemSku) => {
-  if((itemSku.length || itemSku.length === 0) && (itemSku.width || itemSku.width === 0) && (itemSku.height || itemSku.height === 0)) {
-    return itemSku.length + ' * ' + itemSku.width + ' * ' + itemSku.height
-  }
-  return ((itemSku.length || itemSku.length === 0) ? ('长：' + itemSku.length) : '')
-    + ((itemSku.width || itemSku.width === 0) ? (' 宽：' + itemSku.width) : '')
-    + ((itemSku.height || itemSku.height === 0) ? (' 高：' + itemSku.height) : '')
-}
 onMounted(() => {
   nextTick(()=>{
     getList();
@@ -745,29 +801,68 @@ onMounted(() => {
   })
 });
 </script>
-<style>
-.custom-tree-node {
+<style scoped lang="scss">
+.list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.list-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a4d2e;
+}
+
+.list-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.category-drawer-toolbar {
+  margin-bottom: 12px;
+}
+
+.category-drawer-tip {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.5;
+}
+
+.category-drawer-tree {
+  margin-top: 4px;
+}
+
+.category-tree-node {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 14px;
-  padding-right: 8px;
+  padding-right: 4px;
+  min-width: 0;
 }
 
-.el-tree-node__content {
-  display: flex;
-  align-items: center;
-  height: 35px;
+.category-tree-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.el-table .my-cell {
-  vertical-align: top
+.category-tree-more {
+  flex-shrink: 0;
+  padding: 0 4px;
 }
 
-.el-table__empty-text {
-  width: 100%;
+:deep(.category-drawer-tree .el-tree-node__content) {
+  height: 36px;
 }
 
+:deep(.item-flat-table .el-table__cell) {
+  padding: 8px 0;
+}
 </style>

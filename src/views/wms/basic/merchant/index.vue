@@ -2,18 +2,18 @@
   <div class="app-container">
     <el-card>
       <el-form :model="queryParams" ref="queryRef" :inline="true" label-width="68px">
-        <el-form-item label="编号" prop="merchantCode">
+        <el-form-item label="茶企编号" prop="merchantCode">
           <el-input
             v-model="queryParams.merchantCode"
-            placeholder="请输入编号"
+            placeholder="请输入茶企编号"
             clearable
             @keyup.enter="handleQuery"
           />
         </el-form-item>
-        <el-form-item label="名称" prop="merchantName">
+        <el-form-item label="茶企名称" prop="merchantName">
           <el-input
             v-model="queryParams.merchantName"
-            placeholder="请输入名称"
+            placeholder="请输入茶企名称"
             clearable
             @keyup.enter="handleQuery"
           />
@@ -38,7 +38,7 @@
     <el-card class="mt20">
 
       <el-row :gutter="10" class="mb8" type="flex" justify="space-between">
-        <el-col :span="6"><span style="font-size: large">往来单位</span></el-col>
+        <el-col :span="6"><span class="page-title">合作茶企</span></el-col>
         <el-col :span="1.5">
           <el-button
             type="primary"
@@ -50,17 +50,16 @@
         </el-col>
       </el-row>
 
-      <el-table v-loading="loading" :data="merchantList" border class="mt20" empty-text="暂无往来单位">
+      <el-table v-loading="loading" :data="merchantList" border class="mt20" empty-text="暂无合作茶企" size="small">
         <el-table-column label="id" prop="id" v-if="false"/>
-        <el-table-column label="编号" prop="merchantCode" />
-        <el-table-column label="名称" prop="merchantName" />
-        <el-table-column label="企业类型" prop="merchantType">
+        <el-table-column label="茶企编号" prop="merchantCode" min-width="120" show-overflow-tooltip />
+        <el-table-column label="茶企名称" prop="merchantName" min-width="180" show-overflow-tooltip />
+        <el-table-column label="企业类型" prop="merchantType" width="100">
           <template #default="scope">
             <dict-tag :options="merchant_type" :value="scope.row.merchantType"/>
           </template>
         </el-table-column>
-        <el-table-column label="级别" prop="merchantLevel" />
-        <el-table-column label="联系人" prop="contactPerson" />
+        <el-table-column label="联系人" prop="contactPerson" width="100" show-overflow-tooltip />
         <el-table-column label="备注" prop="remark" />
         <el-table-column label="操作" align="right" class-name="small-padding fixed-width">
             <template #default="scope">
@@ -81,17 +80,17 @@
       </el-row>
 
     </el-card>
-    <!-- 添加或修改往来单位对话框 -->
+    <!-- 添加或修改合作茶企 -->
     <el-drawer :title="title" v-model="open" append-to-body size="50%">
-      <el-form ref="merchantRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="编号" prop="merchantCode">
-          <el-input v-model="form.merchantCode" placeholder="请输入编号" />
+      <el-form ref="merchantRef" :model="form" :rules="rules" label-width="88px">
+        <el-form-item label="茶企编号" prop="merchantCode">
+          <el-input v-model="form.merchantCode" placeholder="请输入茶企编号" />
         </el-form-item>
-        <el-form-item label="名称" prop="merchantName">
-          <el-input v-model="form.merchantName" placeholder="请输入名称" />
+        <el-form-item label="茶企名称" prop="merchantName">
+          <el-input v-model="form.merchantName" placeholder="请输入茶企名称" />
         </el-form-item>
         <el-form-item label="企业类型" prop="merchantType">
-          <el-select v-model="form.merchantType" placeholder="请选择企业类型">
+          <el-select v-model="form.merchantType" placeholder="请选择企业类型" style="width: 100%">
             <el-option
               v-for="dict in merchant_type"
               :key="dict.value"
@@ -99,9 +98,6 @@
               :value="parseInt(dict.value)"
             ></el-option>
           </el-select>
-        </el-form-item>
-        <el-form-item label="级别" prop="merchantLevel">
-          <el-input v-model="form.merchantLevel" placeholder="请输入级别" />
         </el-form-item>
         <el-form-item label="开户行" prop="bankName">
           <el-input v-model="form.bankName" placeholder="请输入开户行" />
@@ -177,7 +173,7 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data);
 
-/** 查询往来单位列表 */
+/** 查询合作茶企列表 */
 function getList() {
   loading.value = true;
   listMerchant(queryParams.value).then(response => {
@@ -234,7 +230,7 @@ function resetQuery() {
 function handleAdd() {
   reset();
   open.value = true;
-  title.value = "添加往来单位";
+  title.value = "新增合作茶企";
 }
 
 /** 修改按钮操作 */
@@ -244,7 +240,7 @@ function handleUpdate(row) {
   getMerchant(_id).then(response => {
     form.value = response.data;
     open.value = true;
-    title.value = "修改往来单位";
+    title.value = "修改合作茶企";
   });
 }
 
@@ -277,7 +273,7 @@ function submitForm() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value;
-  proxy.$modal.confirm('确认删除往来单位【' + row.merchantName + '】吗？').then(function() {
+  proxy.$modal.confirm('确认删除合作茶企【' + row.merchantName + '】吗？').then(function() {
     return delMerchant(_ids);
   }).then((res) => {
     loading.value = true;
@@ -297,3 +293,11 @@ function handleExport() {
 
 getList();
 </script>
+
+<style scoped lang="scss">
+.page-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a4d2e;
+}
+</style>

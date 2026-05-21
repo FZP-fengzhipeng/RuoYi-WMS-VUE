@@ -1,7 +1,7 @@
 <template>
   <div class="login">
     <el-form ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
-      <h3 class="title">ruoyi-wms后台管理系统</h3>
+      <h3 class="title">国茶经营管理系统</h3>
       <el-form-item prop="username">
         <el-input
           v-model="loginForm.username"
@@ -58,7 +58,7 @@
           style="width:45%;"
           @click.native.prevent="handleTry"
         >
-          <span>获取体验账号</span>
+          <span>获取试用账号</span>
         </el-button>
         <div style="float: right;" v-if="register">
           <router-link class="link-type" :to="'/register'">立即注册</router-link>
@@ -66,13 +66,13 @@
       </el-form-item>
     </el-form>
     <el-dialog
-      title="公众号二维码"
+      title="系统提示"
       v-model="dialogVisible"
       append-to-body
       :show-close="false"
       width="30%">
       <div style="text-align: center">
-        <span class="font-title-large"><span class="color-main font-extra-large">关注公众号</span>回复<span class="color-main font-extra-large">库存</span>获取体验账号</span>
+        <span class="font-title-large"><span class="color-main font-extra-large">联系管理员</span>获取<span class="color-main font-extra-large">国茶系统</span>试用账号</span>
         <br>
         <img src="@/assets/logo/gzh.jpg" width="160" height="160" style="margin-top: 10px">
       </div>
@@ -84,7 +84,7 @@
     </el-dialog>
     <!--  底部  -->
     <div class="el-login-footer">
-      <span>Copyright © 2017-2024 ichengle.top 技术支持：关注“程序员诚哥”微信公众号，回复：支持</span>
+      <span>Copyright © 2026 国茶经营管理系统</span>
     </div>
   </div>
 </template>
@@ -185,7 +185,7 @@ getCookie();
 
 <style lang='scss' scoped>
 .color-main {
-  color: #409EFF;
+  color: #3e6a2f;
 }
 .font-extra-large {
   font-size: 20px;
@@ -206,7 +206,8 @@ getCookie();
 
 .login-form {
   border-radius: 6px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #d5e4cc;
   width: 400px;
   padding: 25px 25px 5px 25px;
   .el-input {
@@ -242,7 +243,7 @@ getCookie();
   bottom: 0;
   width: 100%;
   text-align: center;
-  color: #fff;
+  color: #f5f9ef;
   font-family: Arial;
   font-size: 12px;
   letter-spacing: 1px;

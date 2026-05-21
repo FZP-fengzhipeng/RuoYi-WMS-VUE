@@ -73,43 +73,7 @@
           >新增</el-button>
         </el-col>
       </el-row>
-      <el-table v-loading="loading" :data="shipmentOrderList" border class="mt20"
-                @expand-change="handleExpandExchange"
-                :row-key="getRowKey"
-                :expand-row-keys="expandedRowKeys"
-                empty-text="暂无出库单"
-                cell-class-name="vertical-top-cell"
-      >
-        <el-table-column type="expand">
-          <template #default="props">
-            <div style="padding: 0 50px 20px 50px">
-              <h3>商品明细</h3>
-              <el-table :data="props.row.details" v-loading="detailLoading[props.$index]" empty-text="暂无商品明细">
-                <el-table-column label="商品名称">
-                  <template #default="{ row }">
-                    <div>{{ row?.item?.itemName }}</div>
-                  </template>
-                </el-table-column>
-                <el-table-column label="规格名称">
-                  <template #default="{ row }">
-                    <div>{{ row?.itemSku?.skuName }}</div>
-                  </template>
-                </el-table-column>
-                <el-table-column label="数量" prop="quantity" align="right">
-                  <template #default="{ row }">
-                    <el-statistic :value="Number(row.quantity)" :precision="0"/>
-                  </template>
-                </el-table-column>
-                <el-table-column label="金额(元)" align="right">
-                  <template #default="{ row }">
-                    <el-statistic v-if="row.amount || row.amount === 0" :precision="2" :value="Number(row.amount)"/>
-                    <div v-else>-</div>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-          </template>
-        </el-table-column>
+      <el-table v-loading="loading" :data="shipmentOrderList" border class="mt20" empty-text="暂无出库单" cell-class-name="vertical-top-cell">
         <el-table-column label="单号/业务单号" align="left" min-width="120">
           <template #default="{ row }">
             <div>单号：{{ row.orderNo }}</div>
@@ -148,6 +112,23 @@
             <div>{{ useWmsStore().merchantMap.get(row.merchantId)?.merchantName }}</div>
           </template>
         </el-table-column>
+        <el-table-column label="商品明细" align="left" min-width="320">
+          <template #default="scope">
+            <div v-if="detailLoading[scope.$index]" class="detail-loading">明细加载中...</div>
+            <div v-else-if="scope.row.details?.length" class="detail-list">
+              <div v-for="detail in scope.row.details" :key="detail.id" class="detail-line">
+                <span>{{ detail?.item?.itemName }}</span>
+                <span class="detail-sep">|</span>
+                <span>{{ detail?.itemSku?.skuName }}</span>
+                <span class="detail-sep">|</span>
+                <span>数量 {{ Number(detail.quantity).toFixed(0) }}</span>
+                <span v-if="detail.amount || detail.amount === 0" class="detail-sep">|</span>
+                <span v-if="detail.amount || detail.amount === 0">金额 {{ Number(detail.amount).toFixed(2) }}</span>
+              </div>
+            </div>
+            <div v-else class="detail-empty">暂无商品明细</div>
+          </template>
+        </el-table-column>
         <el-table-column label="操作时间" align="left" width="150">
           <template #default="{ row }">
             <div>创建：{{ parseTime(row.createTime, '{mm}-{dd} {hh}:{ii}') }}</div>
@@ -176,7 +157,6 @@
                   <el-button link type="primary" @click="handleUpdate(scope.row)" v-hasPermi="['wms:shipment:all']" :disabled="[-1, 1].includes(scope.row.orderStatus)">修改</el-button>
                 </template>
               </el-popover>
-              <el-button link type="primary" @click="handleGoDetail(scope.row)" v-hasPermi="['wms:shipment:all']">{{ expandedRowKeys.includes(scope.row.id) ? '收起' : '查看' }}</el-button>
             </div>
             <div class="mt10">
               <el-popover
@@ -226,8 +206,6 @@ const loading = ref(true);
 const ids = ref([]);
 const total = ref(0);
 const title = ref("");
-// 当前展开集合
-const expandedRowKeys = ref([])
 // 商品明细table的loading状态集合
 const detailLoading = ref([])
 const data = reactive({
@@ -258,10 +236,8 @@ function getList() {
   listShipmentOrder(query).then(response => {
     shipmentOrderList.value = response.rows;
     total.value = response.total;
-    for (let i = 0; i < total; i++) {
-      detailLoading.value.push(false)
-    }
-    expandedRowKeys.value = []
+    detailLoading.value = Array(shipmentOrderList.value.length).fill(false);
+    loadAllShipmentOrderDetail();
     loading.value = false;
   });
 }
@@ -280,7 +256,7 @@ function resetQuery() {
 
 /** 新增按钮操作 */
 function handleAdd() {
-  proxy.$router.push({ path: "/shipmentOrderEdit" });
+  proxy.$router.push({ path: "/teaShipment/shipmentOrderEdit" });
 }
 
 /** 删除按钮操作 */
@@ -298,19 +274,7 @@ function handleDelete(row) {
 }
 
 function handleUpdate(row) {
-  proxy.$router.push({ path: "/shipmentOrderEdit",  query: { id: row.id } });
-}
-
-function handleGoDetail(row) {
-  const index = expandedRowKeys.value.indexOf(row.id)
-  if (index !== -1) {
-    // 收起
-    expandedRowKeys.value.splice(index, 1)
-  } else {
-    // 展开
-    expandedRowKeys.value.push(row.id)
-    loadShipmentOrderDetail(row)
-  }
+  proxy.$router.push({ path: "/teaShipment/shipmentOrderEdit",  query: { id: row.id } });
 }
 
 /** 导出按钮操作 */
@@ -353,16 +317,11 @@ async function handlePrint(row) {
 }
 
 
-function handleExpandExchange(value, expandedRows) {
-  if (!ifExpand(expandedRows)) {
-    return
-  }
-  expandedRowKeys.value = expandedRows.map(it => it.id)
-  loadShipmentOrderDetail(value)
-}
-
 function loadShipmentOrderDetail(row) {
   const index = shipmentOrderList.value.findIndex(it => it.id === row.id)
+  if (index === -1) {
+    return
+  }
   detailLoading.value[index] = true
   listByShipmentOrderId(row.id).then(res => {
     if (res.data?.length) {
@@ -379,18 +338,8 @@ function loadShipmentOrderDetail(row) {
   })
 }
 
-function ifExpand(expandedRows) {
-  if (expandedRows.length < expandedRowKeys.value.length) {
-    expandedRowKeys.value = expandedRows.map(it => it.id)
-
-    return false;
-  }
-
-  return true
-}
-
-function getRowKey(row) {
-  return row.id
+function loadAllShipmentOrderDetail() {
+  shipmentOrderList.value.forEach(row => loadShipmentOrderDetail(row))
 }
 getList();
 </script>
@@ -400,5 +349,17 @@ getList();
 }
 .el-table .vertical-top-cell {
   vertical-align: top
+}
+.detail-loading,
+.detail-empty {
+  color: #909399;
+}
+.detail-line {
+  line-height: 24px;
+  white-space: nowrap;
+}
+.detail-sep {
+  margin: 0 6px;
+  color: #c0c4cc;
 }
 </style>

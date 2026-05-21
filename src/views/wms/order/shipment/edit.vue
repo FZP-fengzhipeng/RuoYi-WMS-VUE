@@ -236,7 +236,7 @@ const cancel = async () => {
   close()
 }
 const close = () => {
-  const obj = {path: "/shipmentOrder"};
+  const obj = {path: "/teaShipment/shipmentOrder"};
   proxy?.$tab.closeOpenPage(obj);
 }
 const inventorySelectShow = ref(false)
@@ -385,7 +385,7 @@ onMounted(() => {
   if (id) {
     loadDetail(id)
   } else {
-    form.value.orderNo = 'CK' + generateNo()
+    form.value.orderNo = 'XS' + generateNo()
   }
 })
 
@@ -466,7 +466,7 @@ const goSaasTip = () => {
 </script>
 
 <style lang="scss" scoped>
-@import "@/assets/styles/variables.module";
+@import "../../../../assets/styles/variables.module.scss";
 
 .btn-box {
   width: calc(100% - #{$base-sidebar-width});
