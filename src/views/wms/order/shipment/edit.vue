@@ -128,6 +128,35 @@
                 <div v-if="row.itemSku.barcode">条码：{{row.itemSku.barcode}}</div>
               </template>
             </el-table-column>
+            <el-table-column label="来源批次" min-width="200">
+              <template #default="{ row }">
+                <template v-if="form.orderStatus === 1">
+                  <div>{{ row.batchNo || '—' }}</div>
+                  <div class="trace-sub" v-if="row.sourceReceiptOrderNo">入仓单：{{ row.sourceReceiptOrderNo }}</div>
+                  <div class="trace-sub" v-if="row.sourceTeaOrigin">产区：{{ row.sourceTeaOrigin }}</div>
+                  <div class="trace-sub" v-if="row.sourceHarvestSeason">
+                    采摘季：<dict-tag :options="wms_harvest_season" :value="row.sourceHarvestSeason" />
+                  </div>
+                </template>
+                <el-select
+                  v-else
+                  v-model="row.sourceReceiptDetailId"
+                  placeholder="选择入仓批次"
+                  filterable
+                  style="width: 100%"
+                  @focus="loadBatches(row)"
+                  @change="(id) => onBatchChange(row, id)"
+                >
+                  <el-option
+                    v-for="b in row._batchOptions || []"
+                    :key="b.receiptDetailId"
+                    :label="batchLabel(b)"
+                    :value="b.receiptDetailId"
+                    :disabled="b.remainQuantity <= 0"
+                  />
+                </el-select>
+              </template>
+            </el-table-column>
             <el-table-column label="出库数量" prop="quantity" width="180">
               <template #default="scope">
                 <el-input-number
@@ -195,9 +224,10 @@ import {useWmsStore} from '@/store/modules/wms'
 import {numSub, generateNo} from '@/utils/ruoyi'
 import InventorySelect from "@/views/components/InventorySelect.vue";
 import {getWarehouseAndSkuKey} from "@/utils/wmsUtil"
+import {listAvailableBatch} from "@/api/wms/teaBatch"
 
 const {proxy} = getCurrentInstance();
-const {wms_shipment_type} = proxy.useDict("wms_shipment_type");
+const {wms_shipment_type, wms_harvest_season} = proxy.useDict("wms_shipment_type", "wms_harvest_season");
 
 const loading = ref(false)
 const initFormData = {
@@ -251,8 +281,7 @@ const handleOkClick = (item) => {
   selectedInventory.value = [...item]
   item.forEach(it => {
     if (!form.value.details.find(detail => getWarehouseAndSkuKey(detail) === getWarehouseAndSkuKey(it))) {
-      form.value.details.push(
-        {
+      const row = {
           itemSku: it.itemSku,
           item: it.item,
           skuId: it.skuId,
@@ -260,7 +289,10 @@ const handleOkClick = (item) => {
           quantity: undefined,
           warehouseId: form.value.warehouseId,
           inventoryId: it.id,
-        })
+          _batchOptions: []
+        }
+      form.value.details.push(row)
+      loadBatches(row)
     }
   })
 }
@@ -285,7 +317,9 @@ const getParamsBeforeSave = (orderStatus) => {
         skuId: it.skuId,
         amount: it.amount,
         quantity: it.quantity,
-        warehouseId: form.value.warehouseId
+        warehouseId: form.value.warehouseId,
+        batchNo: it.batchNo,
+        sourceReceiptDetailId: it.sourceReceiptDetailId,
       }
     })
   }
@@ -356,6 +390,10 @@ const doShipment = async () => {
     const invalidQuantityList = form.value.details.filter(it => !it.quantity)
     if (invalidQuantityList?.length) {
       return ElMessage.error('请选择数量')
+    }
+    const noBatchList = form.value.details.filter(it => !it.sourceReceiptDetailId)
+    if (noBatchList?.length) {
+      return ElMessage.error('请为每条明细选择来源入仓批次')
     }
     const params = getParamsBeforeSave(1)
 
@@ -451,6 +489,28 @@ const handleDeleteDetail = (row, index) => {
   const indexOfSelected = selectedInventory.value.findIndex(it => getWarehouseAndSkuKey(it) === getWarehouseAndSkuKey(row))
   selectedInventory.value.splice(indexOfSelected, 1)
 }
+const batchLabel = (b) => {
+  const parts = [b.batchNo, `余${b.remainQuantity}`]
+  if (b.teaOrigin) parts.push(b.teaOrigin)
+  if (b.harvestSeason) parts.push(b.harvestSeason)
+  return parts.join(' · ')
+}
+
+const loadBatches = (row) => {
+  if (!row.skuId || !form.value.warehouseId) return
+  listAvailableBatch(row.skuId, form.value.warehouseId).then(res => {
+    row._batchOptions = res.data || []
+  })
+}
+
+const onBatchChange = (row, receiptDetailId) => {
+  const batch = (row._batchOptions || []).find(b => b.receiptDetailId === receiptDetailId)
+  if (batch) {
+    row.batchNo = batch.batchNo
+    row.sourceReceiptDetailId = batch.receiptDetailId
+  }
+}
+
 const goSaasTip = () => {
   ElMessageBox.alert('如需体验，请在公众号内回复：saas', '请去Saas版本体验', {
     confirmButtonText: '确定'
@@ -461,6 +521,12 @@ const goSaasTip = () => {
 
 <style lang="scss" scoped>
 @import "../../../../assets/styles/variables.module.scss";
+
+.trace-sub {
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.4;
+}
 
 .btn-box {
   width: calc(100% - #{$base-sidebar-width});

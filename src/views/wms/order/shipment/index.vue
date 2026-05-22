@@ -124,6 +124,13 @@
                 <span>数量 {{ Number(detail.quantity).toFixed(0) }}</span>
                 <span v-if="detail.amount || detail.amount === 0" class="detail-sep">|</span>
                 <span v-if="detail.amount || detail.amount === 0">金额 {{ Number(detail.amount).toFixed(2) }}</span>
+                <template v-if="scope.row.orderStatus === 1 && (detail.batchNo || detail.sourceReceiptOrderNo)">
+                  <span class="detail-sep">|</span>
+                  <span class="trace-tag">批次 {{ detail.batchNo || '—' }}</span>
+                  <span v-if="detail.sourceReceiptOrderNo" class="trace-tag">来自 {{ detail.sourceReceiptOrderNo }}</span>
+                  <span v-if="detail.sourceTeaOrigin" class="trace-tag">{{ detail.sourceTeaOrigin }}</span>
+                  <dict-tag v-if="detail.sourceHarvestSeason" :options="wms_harvest_season" :value="detail.sourceHarvestSeason" size="small" />
+                </template>
               </div>
             </div>
             <div v-else class="detail-empty">暂无商品明细</div>
@@ -198,7 +205,7 @@ import {useWmsStore} from "../../../../store/modules/wms";
 import shipmentPanel from "@/components/PrintTemplate/shipment-panel";
 
 const { proxy } = getCurrentInstance();
-const { wms_shipment_status, wms_shipment_type} = proxy.useDict("wms_shipment_status", "wms_shipment_type");
+const { wms_shipment_status, wms_shipment_type, wms_tea_type, wms_harvest_season } = proxy.useDict("wms_shipment_status", "wms_shipment_type", "wms_tea_type", "wms_harvest_season");
 const shipmentStatusOptions = computed(() =>
   (wms_shipment_status.value || []).filter(d => String(d.value) !== '-1')
 );
@@ -369,5 +376,10 @@ getList();
 .detail-sep {
   margin: 0 6px;
   color: #c0c4cc;
+}
+.trace-tag {
+  margin-right: 6px;
+  color: #2f6b2f;
+  font-size: 12px;
 }
 </style>

@@ -92,6 +92,30 @@
                   <div class="cell-sub" v-if="row.itemSku.barcode">条码：{{ row.itemSku.barcode }}</div>
                 </template>
               </el-table-column>
+              <el-table-column label="批次号" width="130">
+                <template #default="{ row }">
+                  <el-input v-model="row.batchNo" placeholder="可留空自动生成" size="small" />
+                </template>
+              </el-table-column>
+              <el-table-column label="产区" width="110">
+                <template #default="{ row }">
+                  <el-input v-model="row.teaOrigin" placeholder="产区" size="small" />
+                </template>
+              </el-table-column>
+              <el-table-column label="采摘季" width="110">
+                <template #default="{ row }">
+                  <el-select v-model="row.harvestSeason" clearable placeholder="采摘季" size="small" style="width: 100%">
+                    <el-option v-for="d in wms_harvest_season" :key="d.value" :label="d.label" :value="d.value" />
+                  </el-select>
+                </template>
+              </el-table-column>
+              <el-table-column label="茶类" width="100">
+                <template #default="{ row }">
+                  <el-select v-model="row.teaType" clearable placeholder="茶类" size="small" style="width: 100%">
+                    <el-option v-for="d in wms_tea_type" :key="d.value" :label="d.label" :value="d.value" />
+                  </el-select>
+                </template>
+              </el-table-column>
               <el-table-column label="数量" prop="quantity" width="130" align="center">
                 <template #default="scope">
                   <el-input-number
@@ -160,7 +184,7 @@ import { numSub, generateNo } from '@/utils/ruoyi'
 import { delReceiptOrderDetail } from '@/api/wms/receiptOrderDetail'
 
 const {proxy} = getCurrentInstance();
-const { wms_receipt_type } = proxy.useDict("wms_receipt_type");
+const { wms_receipt_type, wms_tea_type, wms_harvest_season } = proxy.useDict("wms_receipt_type", "wms_tea_type", "wms_harvest_season");
 const selectedSku = ref([])
 const loading = ref(false)
 const skuSelectRef = ref(null)
@@ -247,7 +271,11 @@ const handleOkClick = (item) => {
         item: it.item,
         amount: undefined,
         quantity: it.quantity,
-        warehouseId: form.value.warehouseId
+        warehouseId: form.value.warehouseId,
+        batchNo: undefined,
+        teaOrigin: it.item?.teaOrigin,
+        harvestSeason: it.item?.harvestSeason,
+        teaType: it.item?.teaType,
       })
     }
   })
@@ -271,6 +299,10 @@ const getParamsBeforeSave = (orderStatus) => {
         amount: it.amount,
         quantity: it.quantity,
         warehouseId: form.value.warehouseId,
+        batchNo: it.batchNo,
+        teaOrigin: it.teaOrigin,
+        harvestSeason: it.harvestSeason,
+        teaType: it.teaType,
       }
     })
   }

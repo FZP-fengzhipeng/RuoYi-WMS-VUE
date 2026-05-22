@@ -1,5 +1,23 @@
 <template>
   <div class="tea-home">
+    <el-alert
+      v-if="stockAlertCount > 0"
+      type="warning"
+      show-icon
+      :closable="false"
+      class="stock-alert-banner"
+    >
+      <template #title>
+        库存预警：当前有 <b>{{ stockAlertCount }}</b> 条茶品低于安全线
+        <el-button link type="primary" class="ml8" @click="goStockAlert">查看明细</el-button>
+      </template>
+      <div v-if="stockAlertPreview.length" class="alert-preview">
+        <span v-for="(item, idx) in stockAlertPreview" :key="idx" class="preview-item">
+          {{ item.warehouseName }} · {{ item.itemName }}（缺 {{ item.gapQuantity }}）
+        </span>
+      </div>
+    </el-alert>
+
     <section class="hero">
       <div class="hero-left">
         <img class="hero-logo" src="@/assets/logo/tea-logo.svg" alt="茶叶Logo" />
@@ -38,13 +56,51 @@
   </div>
 </template>
 
-<script setup name="TeaHome"></script>
+<script setup name="TeaHome">
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { getStockAlertSummary } from '@/api/wms/stockAlert'
+
+const router = useRouter()
+const stockAlertCount = ref(0)
+const stockAlertPreview = ref([])
+
+const loadAlertSummary = () => {
+  getStockAlertSummary().then(res => {
+    if (res.code === 200 && res.data) {
+      stockAlertCount.value = res.data.count || 0
+      stockAlertPreview.value = res.data.items || []
+    }
+  }).catch(() => {})
+}
+
+const goStockAlert = () => {
+  router.push('/teaInventory/stockAlert')
+}
+
+onMounted(loadAlertSummary)
+</script>
 
 <style lang="scss" scoped>
 .tea-home {
   min-height: calc(100vh - 84px);
   padding: 20px;
   background: linear-gradient(160deg, #f6f2e8 0%, #eef5e9 100%);
+}
+
+.stock-alert-banner {
+  margin-bottom: 16px;
+}
+
+.alert-preview {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #606266;
+}
+
+.preview-item {
+  display: inline-block;
+  margin-right: 16px;
 }
 
 .hero {

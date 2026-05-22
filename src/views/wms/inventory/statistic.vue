@@ -35,7 +35,10 @@
     </el-card>
     <el-card class="mt20">
       <div class="mb8 flex-space-between">
-        <div style="font-size: large">库存统计</div>
+        <div>
+          <div style="font-size: large">茶仓库存</div>
+          <div class="page-hint">为每个「茶仓 + 规格」设置最低库存；入仓后当前库存低于该值将出现在库存预警</div>
+        </div>
         <el-checkbox v-model="filterable" label="过滤掉库存为0的商品" size="large" @change="handleChangeFilterZero"/>
       </div>
       <el-table :data="inventoryList" border :span-method="spanMethod"
@@ -78,9 +81,36 @@
             </template>
           </el-table-column>
         </template>
-        <el-table-column label="库存" prop="quantity" align="right">
+        <el-table-column label="当前库存" prop="quantity" align="right" width="100">
           <template #default="{ row }">
-            <el-statistic :value="Number(row.quantity)" :precision="0"/>
+            <span :class="{ 'qty-low': isLowStock(row) }">
+              <el-statistic :value="Number(row.quantity)" :precision="0"/>
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="最低库存" width="150" align="center">
+          <template #default="{ row }">
+            <el-input-number
+              v-model="row._minQuantity"
+              :min="0"
+              :precision="0"
+              controls-position="right"
+              size="small"
+              style="width: 120px"
+              placeholder="安全线"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column label="预警" width="90" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="!hasThreshold(row)" type="info" size="small">未设</el-tag>
+            <el-tag v-else-if="isLowStock(row)" type="danger" size="small">预警</el-tag>
+            <el-tag v-else type="success" size="small">正常</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="80" align="center" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" size="small" @click="saveMinQuantity(row)">保存</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -97,6 +127,7 @@
 import {
   listInventoryBoard
 } from '@/api/wms/inventory';
+import { updateInventoryMinQuantity } from '@/api/wms/stockAlert';
 import {computed, getCurrentInstance, onMounted, ref} from 'vue';
 import {ElForm} from 'element-plus';
 import {getRowspanMethod} from "@/utils/getRowSpanMethod";
@@ -141,6 +172,7 @@ const getList = async () => {
   const res = await listInventoryBoard(query,queryType.value);
   inventoryList.value = res.rows;
   inventoryList.value.forEach(it => {
+    it._minQuantity = it.minQuantity != null ? Number(it.minQuantity) : undefined
     if (queryType.value == "warehouse") {
       it.warehouseIdAndItemId = it.warehouseId + '-' + it.item.id
     } else if (queryType.value == "item") {
@@ -187,6 +219,31 @@ const handleChangeFilterZero = (e) => {
   getList()
 }
 
+const effectiveMin = (row) => {
+  const invMin = row._minQuantity
+  if (invMin != null && invMin > 0) return invMin
+  const skuMin = row.itemSku?.minQuantity
+  if (skuMin != null && Number(skuMin) > 0) return Number(skuMin)
+  return 0
+}
+
+const hasThreshold = (row) => effectiveMin(row) > 0
+
+const isLowStock = (row) => {
+  const min = effectiveMin(row)
+  return min > 0 && Number(row.quantity) < min
+}
+
+const saveMinQuantity = (row) => {
+  if (row._minQuantity == null || row._minQuantity < 0) {
+    return proxy.$modal.msgWarning('请填写最低库存')
+  }
+  updateInventoryMinQuantity(row.id, row._minQuantity).then(() => {
+    row.minQuantity = row._minQuantity
+    proxy.$modal.msgSuccess('已保存该茶仓最低库存')
+  })
+}
+
 onMounted(() => {
   getList();
 });
@@ -197,5 +254,14 @@ onMounted(() => {
 }
 .el-table .vertical-top-cell {
   vertical-align: top
+}
+.page-hint {
+  font-size: 13px;
+  color: #909399;
+  margin-top: 4px;
+}
+.qty-low :deep(.el-statistic__number) {
+  color: #f56c6c;
+  font-weight: 600;
 }
 </style>

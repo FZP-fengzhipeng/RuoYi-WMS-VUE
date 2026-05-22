@@ -5,6 +5,9 @@
     <top-nav id="topmenu-container" class="topmenu-container" v-if="settingsStore.topNav" />
 
     <div class="right-menu">
+      <el-badge v-if="stockAlertCount > 0" :value="stockAlertCount" :max="99" class="alert-badge">
+        <el-button link type="warning" @click="goStockAlert">库存预警</el-button>
+      </el-badge>
       <div class="brand-block">
         <img src="@/assets/logo/tea-logo.svg" alt="茶叶Logo" class="brand-logo" />
         <span>国茶经营管理系统</span>
@@ -32,7 +35,10 @@
 </template>
 
 <script setup>
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
+import { getStockAlertSummary } from '@/api/wms/stockAlert'
 import Breadcrumb from '@/components/Breadcrumb'
 import TopNav from '@/components/TopNav'
 import Hamburger from '@/components/Hamburger'
@@ -45,9 +51,25 @@ import useAppStore from '@/store/modules/app'
 import useUserStore from '@/store/modules/user'
 import useSettingsStore from '@/store/modules/settings'
 
+const router = useRouter()
 const appStore = useAppStore()
 const userStore = useUserStore()
 const settingsStore = useSettingsStore()
+const stockAlertCount = ref(0)
+
+const loadStockAlert = () => {
+  getStockAlertSummary().then(res => {
+    if (res.code === 200 && res.data) {
+      stockAlertCount.value = res.data.count || 0
+    }
+  }).catch(() => {})
+}
+
+const goStockAlert = () => {
+  router.push('/teaInventory/stockAlert')
+}
+
+onMounted(loadStockAlert)
 
 function toggleSideBar() {
   appStore.toggleSideBar()
@@ -118,8 +140,12 @@ function setLayout() {
     vertical-align: top;
   }
 
-  .right-menu {
-    float: right;
+.alert-badge {
+  margin-right: 12px;
+}
+
+.right-menu {
+  float: right;
     height: 100%;
     line-height: 50px;
     display: flex;
