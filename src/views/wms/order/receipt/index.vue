@@ -11,7 +11,7 @@
               全部
             </el-radio-button>
             <el-radio-button
-              v-for="item in wms_receipt_status"
+              v-for="item in receiptStatusOptions"
               :key="item.value"
               :label="item.value"
             >
@@ -100,7 +100,7 @@
         </el-table-column>
         <el-table-column label="入仓状态" align="center" prop="orderStatus" width="80">
           <template #default="{ row }">
-            <dict-tag :options="wms_receipt_status" :value="row.orderStatus" />
+            <dict-tag :options="receiptStatusOptions" :value="row.orderStatus" />
           </template>
         </el-table-column>
         <el-table-column label="入库类型" align="center" prop="optType" width="100">
@@ -155,10 +155,10 @@
                 :width="300"
                 trigger="hover"
                 :disabled="scope.row.orderStatus === 0"
-                :content="'入仓单【' + scope.row.orderNo + '】已' + (scope.row.orderStatus === 1 ? '入仓' : '作废') + '，无法修改！' "
+                :content="'入仓单【' + scope.row.orderNo + '】已入仓，无法修改！' "
               >
                 <template #reference>
-                  <el-button link type="primary" @click="handleUpdate(scope.row)" v-hasPermi="['wms:receipt:all']" :disabled="[-1, 1].includes(scope.row.orderStatus)">修改</el-button>
+                  <el-button link type="primary" @click="handleUpdate(scope.row)" v-hasPermi="['wms:receipt:all']" :disabled="scope.row.orderStatus !== 0">修改</el-button>
                 </template>
               </el-popover>
             </div>
@@ -168,7 +168,7 @@
                 title="提示"
                 :width="300"
                 trigger="hover"
-                :disabled="[-1, 0].includes(scope.row.orderStatus)"
+                :disabled="scope.row.orderStatus !== 1"
                 :content="'入仓单【' + scope.row.orderNo + '】已入仓，无法删除！' "
               >
                 <template #reference>
@@ -196,7 +196,7 @@
 
 <script setup name="ReceiptOrder">
 import {delReceiptOrder, getReceiptOrder, listReceiptOrder} from "@/api/wms/receiptOrder";
-import {getCurrentInstance, reactive, ref, toRefs} from "vue";
+import {computed, getCurrentInstance, reactive, ref, toRefs} from "vue";
 import {useWmsStore} from "../../../../store/modules/wms";
 import {listByReceiptOrderId} from "@/api/wms/receiptOrderDetail";
 import {ElMessageBox} from "element-plus";
@@ -204,6 +204,9 @@ import receiptPanel from "@/components/PrintTemplate/receipt-panel";
 
 const { proxy } = getCurrentInstance();
 const { wms_receipt_status, wms_receipt_type } = proxy.useDict("wms_receipt_status", "wms_receipt_type");
+const receiptStatusOptions = computed(() =>
+  (wms_receipt_status.value || []).filter(d => String(d.value) !== '-1')
+);
 const receiptOrderList = ref([]);
 const open = ref(false);
 const buttonLoading = ref(false);

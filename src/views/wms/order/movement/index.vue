@@ -11,7 +11,7 @@
               全部
             </el-radio-button>
             <el-radio-button
-              v-for="item in wms_movement_status"
+              v-for="item in movementStatusOptions"
               :key="item.value"
               :label="item.value"
             >
@@ -63,7 +63,7 @@
         </el-table-column>
         <el-table-column label="调拨状态" align="center" prop="orderStatus" width="80">
           <template #default="{ row }">
-            <dict-tag :options="wms_movement_status" :value="row.orderStatus" />
+            <dict-tag :options="movementStatusOptions" :value="row.orderStatus" />
           </template>
         </el-table-column>
         <el-table-column label="总数量/总金额(元)" align="left">
@@ -117,10 +117,10 @@
                 :width="300"
                 trigger="hover"
                 :disabled="scope.row.orderStatus === 0"
-                :content="'调拨单【' + scope.row.orderNo + '】已' + (scope.row.orderStatus === 1 ? '调拨' : '作废') + '，无法修改！' "
+                :content="'调拨单【' + scope.row.orderNo + '】已调拨，无法修改！' "
               >
                 <template #reference>
-                  <el-button link type="primary" @click="handleUpdate(scope.row)" v-hasPermi="['wms:movement:all']" :disabled="[-1, 1].includes(scope.row.orderStatus)">修改</el-button>
+                  <el-button link type="primary" @click="handleUpdate(scope.row)" v-hasPermi="['wms:movement:all']" :disabled="scope.row.orderStatus !== 0">修改</el-button>
                 </template>
               </el-popover>
             </div>
@@ -130,7 +130,7 @@
                 title="提示"
                 :width="300"
                 trigger="hover"
-                :disabled="[-1, 0].includes(scope.row.orderStatus)"
+                :disabled="scope.row.orderStatus !== 1"
                 :content="'调拨单【' + scope.row.orderNo + '】已调拨，无法删除！' "
               >
                 <template #reference>
@@ -159,13 +159,16 @@
 <script setup name="MovementOrder">
 import {listMovementOrder, delMovementOrder, getMovementOrder} from "@/api/wms/movementOrder";
 import {listByMovementOrderId} from "@/api/wms/movementOrderDetail";
-import {getCurrentInstance, reactive, ref, toRefs} from "vue";
+import {computed, getCurrentInstance, reactive, ref, toRefs} from "vue";
 import {useWmsStore} from "../../../../store/modules/wms";
 import {ElMessageBox} from "element-plus";
 import movementPanel from "@/components/PrintTemplate/movement-panel";
 
 const { proxy } = getCurrentInstance();
 const { wms_movement_status } = proxy.useDict("wms_movement_status");
+const movementStatusOptions = computed(() =>
+  (wms_movement_status.value || []).filter(d => String(d.value) !== '-1')
+);
 const movementOrderList = ref([]);
 const open = ref(false);
 const buttonLoading = ref(false);

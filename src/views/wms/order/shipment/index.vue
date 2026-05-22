@@ -11,7 +11,7 @@
               全部
             </el-radio-button>
             <el-radio-button
-              v-for="item in wms_shipment_status"
+              v-for="item in shipmentStatusOptions"
               :key="item.value"
               :label="item.value"
             >
@@ -99,7 +99,7 @@
         </el-table-column>
         <el-table-column label="出仓状态" align="center" prop="orderStatus" width="80">
           <template #default="{ row }">
-            <dict-tag :options="wms_shipment_status" :value="row.orderStatus" />
+            <dict-tag :options="shipmentStatusOptions" :value="row.orderStatus" />
           </template>
         </el-table-column>
         <el-table-column label="出库类型" align="center" prop="optType" width="100">
@@ -151,10 +151,10 @@
                 :width="300"
                 trigger="hover"
                 :disabled="scope.row.orderStatus === 0"
-                :content="'出仓单【' + scope.row.orderNo + '】已' + (scope.row.orderStatus === 1 ? '出仓' : '作废') + '，无法修改！' "
+                :content="'出仓单【' + scope.row.orderNo + '】已出仓，无法修改！' "
               >
                 <template #reference>
-                  <el-button link type="primary" @click="handleUpdate(scope.row)" v-hasPermi="['wms:shipment:all']" :disabled="[-1, 1].includes(scope.row.orderStatus)">修改</el-button>
+                  <el-button link type="primary" @click="handleUpdate(scope.row)" v-hasPermi="['wms:shipment:all']" :disabled="scope.row.orderStatus !== 0">修改</el-button>
                 </template>
               </el-popover>
             </div>
@@ -164,7 +164,7 @@
                 title="提示"
                 :width="300"
                 trigger="hover"
-                :disabled="[-1, 0].includes(scope.row.orderStatus)"
+                :disabled="scope.row.orderStatus !== 1"
                 :content="'出仓单【' + scope.row.orderNo + '】已出仓，无法删除！' "
               >
                 <template #reference>
@@ -193,12 +193,15 @@
 <script setup name="ShipmentOrder">
 import {listShipmentOrder, delShipmentOrder, getShipmentOrder} from "@/api/wms/shipmentOrder";
 import {listByShipmentOrderId} from "@/api/wms/shipmentOrderDetail";
-import {getCurrentInstance, reactive, ref, toRefs} from "vue";
+import {computed, getCurrentInstance, reactive, ref, toRefs} from "vue";
 import {useWmsStore} from "../../../../store/modules/wms";
 import shipmentPanel from "@/components/PrintTemplate/shipment-panel";
 
 const { proxy } = getCurrentInstance();
 const { wms_shipment_status, wms_shipment_type} = proxy.useDict("wms_shipment_status", "wms_shipment_type");
+const shipmentStatusOptions = computed(() =>
+  (wms_shipment_status.value || []).filter(d => String(d.value) !== '-1')
+);
 const shipmentOrderList = ref([]);
 const open = ref(false);
 const buttonLoading = ref(false);

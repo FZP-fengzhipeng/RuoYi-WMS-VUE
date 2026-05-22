@@ -158,7 +158,6 @@
       <div class="btn-box">
         <div>
           <el-button @click="doMovement" type="primary" class="ml10">完成移库</el-button>
-          <el-button @click="updateToInvalid" type="danger" v-if="form.id">作废</el-button>
         </div>
         <div>
           <el-button @click="save" type="primary">暂存</el-button>
@@ -359,11 +358,6 @@ const doMovement = async () => {
       loading.value = false
     })
   })
-}
-
-const updateToInvalid = async () => {
-  await proxy?.$modal.confirm('确认作废加工调拨单吗？');
-  doSave(-1)
 }
 
 const route = useRoute();

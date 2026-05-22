@@ -125,7 +125,7 @@ async function send() {
           }
           assistantMsg.lastOrderNo = parsed.lastOrderNo || null
           assistantMsg.links = parsed.navigateHints || []
-          if (!assistantMsg.content) {
+          if (!assistantMsg.content && parsed.prefillBriefSummary !== false) {
             assistantMsg.content = parsed.briefSummary || ''
           }
         } catch (e) {

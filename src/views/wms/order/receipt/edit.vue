@@ -139,7 +139,6 @@
       <div class="btn-box">
         <div>
           <el-button @click="doWarehousing" type="primary" class="ml10">确认入仓</el-button>
-          <el-button @click="updateToInvalid" type="danger" v-if="form.id">作废</el-button>
         </div>
         <div>
           <el-button @click="save" type="primary">暂存</el-button>
@@ -355,11 +354,6 @@ const doWarehousing = async () => {
       loading.value = false
     })
   })
-}
-
-const updateToInvalid = async () => {
-  await proxy?.$modal.confirm('确认作废入仓单吗？');
-  doSave(-1)
 }
 
 const route = useRoute();
