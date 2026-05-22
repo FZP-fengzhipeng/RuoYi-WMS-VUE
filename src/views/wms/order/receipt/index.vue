@@ -113,28 +113,15 @@
             <div>{{ useWmsStore().merchantMap.get(row.merchantId)?.merchantName }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="商品明细" align="left" min-width="320">
+        <el-table-column label="商品明细" align="left" min-width="420" class-name="order-detail-cell">
           <template #default="scope">
-            <div v-if="detailLoading[scope.$index]" class="detail-loading">明细加载中...</div>
-            <div v-else-if="scope.row.details?.length" class="detail-list">
-              <div v-for="detail in scope.row.details" :key="detail.id" class="detail-line">
-                <span>{{ detail?.item?.itemName }}</span>
-                <span class="detail-sep">|</span>
-                <span>{{ detail?.itemSku?.skuName }}</span>
-                <span class="detail-sep">|</span>
-                <span>数量 {{ Number(detail.quantity).toFixed(0) }}</span>
-                <span v-if="detail.amount || detail.amount === 0" class="detail-sep">|</span>
-                <span v-if="detail.amount || detail.amount === 0">金额 {{ Number(detail.amount).toFixed(2) }}</span>
-                <template v-if="detail.batchNo || detail.teaOrigin">
-                  <span class="detail-sep">|</span>
-                  <span class="trace-tag">批次 {{ detail.batchNo || '—' }}</span>
-                  <span v-if="detail.teaOrigin" class="trace-tag">产区 {{ detail.teaOrigin }}</span>
-                  <dict-tag v-if="detail.harvestSeason" :options="wms_harvest_season" :value="detail.harvestSeason" size="small" />
-                  <dict-tag v-if="detail.teaType" :options="wms_tea_type" :value="detail.teaType" size="small" />
-                </template>
-              </div>
-            </div>
-            <div v-else class="detail-empty">暂无商品明细</div>
+            <order-detail-list
+              :details="scope.row.details"
+              :loading="detailLoading[scope.$index]"
+              variant="receipt"
+              :tea-type-options="wms_tea_type"
+              :harvest-season-options="wms_harvest_season"
+            />
           </template>
         </el-table-column>
 
@@ -208,6 +195,7 @@ import {useWmsStore} from "../../../../store/modules/wms";
 import {listByReceiptOrderId} from "@/api/wms/receiptOrderDetail";
 import {ElMessageBox} from "element-plus";
 import receiptPanel from "@/components/PrintTemplate/receipt-panel";
+import OrderDetailList from "@/components/Wms/OrderDetailList.vue";
 
 const { proxy } = getCurrentInstance();
 const { wms_receipt_status, wms_receipt_type, wms_tea_type, wms_harvest_season } = proxy.useDict("wms_receipt_status", "wms_receipt_type", "wms_tea_type", "wms_harvest_season");
@@ -369,22 +357,5 @@ getList();
 }
 .el-table .vertical-top-cell {
   vertical-align: top
-}
-.detail-loading,
-.detail-empty {
-  color: #909399;
-}
-.detail-line {
-  line-height: 24px;
-  white-space: nowrap;
-}
-.detail-sep {
-  margin: 0 6px;
-  color: #c0c4cc;
-}
-.trace-tag {
-  margin-right: 6px;
-  color: #2f6b2f;
-  font-size: 12px;
 }
 </style>

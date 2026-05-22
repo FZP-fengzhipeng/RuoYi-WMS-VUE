@@ -37,7 +37,7 @@
       <div class="mb8 flex-space-between">
         <div>
           <div style="font-size: large">茶仓库存</div>
-          <div class="page-hint">为每个「茶仓 + 规格」设置最低库存；入仓后当前库存低于该值将出现在库存预警</div>
+          <div class="page-hint">可为每个「茶仓+规格」单独设最低库存；未设置时使用「茶仓预警规则」中的茶仓默认值</div>
         </div>
         <el-checkbox v-model="filterable" label="过滤掉库存为0的商品" size="large" @change="handleChangeFilterZero"/>
       </div>
@@ -127,7 +127,7 @@
 import {
   listInventoryBoard
 } from '@/api/wms/inventory';
-import { updateInventoryMinQuantity } from '@/api/wms/stockAlert';
+import { updateInventoryMinQuantity, listStockAlertRule } from '@/api/wms/stockAlert';
 import {computed, getCurrentInstance, onMounted, ref} from 'vue';
 import {ElForm} from 'element-plus';
 import {getRowspanMethod} from "@/utils/getRowSpanMethod";
@@ -147,6 +147,7 @@ const total = ref(0);
 const rowSpanArray = ref(['warehouseId', 'warehouseIdAndItemId', 'warehouseIdAndSkuId'])
 
 const filterable = ref(false)
+const warehouseMinMap = ref({})
 const queryType = ref("warehouse")
 const queryParams = ref({
   pageNum: 1,
@@ -219,9 +220,23 @@ const handleChangeFilterZero = (e) => {
   getList()
 }
 
+const loadWarehouseRules = () => {
+  listStockAlertRule().then(res => {
+    const map = {}
+    ;(res.data || []).forEach(r => {
+      if (r.status === '1' && r.warehouseId && r.minQuantity > 0) {
+        map[r.warehouseId] = Number(r.minQuantity)
+      }
+    })
+    warehouseMinMap.value = map
+  })
+}
+
 const effectiveMin = (row) => {
   const invMin = row._minQuantity
   if (invMin != null && invMin > 0) return invMin
+  const whMin = warehouseMinMap.value[row.warehouseId]
+  if (whMin > 0) return whMin
   const skuMin = row.itemSku?.minQuantity
   if (skuMin != null && Number(skuMin) > 0) return Number(skuMin)
   return 0
@@ -245,6 +260,7 @@ const saveMinQuantity = (row) => {
 }
 
 onMounted(() => {
+  loadWarehouseRules()
   getList();
 });
 </script>

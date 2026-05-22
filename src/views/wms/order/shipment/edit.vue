@@ -138,6 +138,7 @@
                     采摘季：<dict-tag :options="wms_harvest_season" :value="row.sourceHarvestSeason" />
                   </div>
                 </template>
+                <span v-else-if="row._hasBatchStock === false" class="trace-sub">无批次记录，可直接出仓</span>
                 <el-select
                   v-else
                   v-model="row.sourceReceiptDetailId"
@@ -391,14 +392,17 @@ const doShipment = async () => {
     if (invalidQuantityList?.length) {
       return ElMessage.error('请选择数量')
     }
-    const noBatchList = form.value.details.filter(it => !it.sourceReceiptDetailId)
-    if (noBatchList?.length) {
-      return ElMessage.error('请为每条明细选择来源入仓批次')
-    }
     const params = getParamsBeforeSave(1)
 
     loading.value = true
-    shipment(params).then((res) => {
+    validateBatchBeforeShipment().then(ok => {
+      if (!ok) {
+        loading.value = false
+        return
+      }
+      return shipment(params)
+    }).then((res) => {
+      if (!res) return
       if (res.code === 200) {
         ElMessage.success('出库成功')
         close()
@@ -500,7 +504,20 @@ const loadBatches = (row) => {
   if (!row.skuId || !form.value.warehouseId) return
   listAvailableBatch(row.skuId, form.value.warehouseId).then(res => {
     row._batchOptions = res.data || []
+    row._hasBatchStock = (row._batchOptions.length > 0)
   })
+}
+
+const validateBatchBeforeShipment = async () => {
+  for (const row of form.value.details) {
+    const res = await listAvailableBatch(row.skuId, form.value.warehouseId)
+    const options = res.data || []
+    if (options.length > 0 && !row.sourceReceiptDetailId) {
+      ElMessage.error('存在可用入仓批次，请为每条明细选择来源批次')
+      return false
+    }
+  }
+  return true
 }
 
 const onBatchChange = (row, receiptDetailId) => {

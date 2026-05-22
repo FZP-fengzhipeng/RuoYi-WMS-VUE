@@ -78,21 +78,13 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="商品明细" align="left" min-width="320">
+        <el-table-column label="商品明细" align="left" min-width="420" class-name="order-detail-cell">
           <template #default="scope">
-            <div v-if="detailLoading[scope.$index]" class="detail-loading">明细加载中...</div>
-            <div v-else-if="scope.row.details?.length" class="detail-list">
-              <div v-for="detail in scope.row.details" :key="detail.id" class="detail-line">
-                <span>{{ detail?.item?.itemName }}</span>
-                <span class="detail-sep">|</span>
-                <span>{{ detail?.itemSku?.skuName }}</span>
-                <span class="detail-sep">|</span>
-                <span>数量 {{ Number(detail.quantity).toFixed(0) }}</span>
-                <span v-if="detail.amount || detail.amount === 0" class="detail-sep">|</span>
-                <span v-if="detail.amount || detail.amount === 0">金额 {{ Number(detail.amount).toFixed(2) }}</span>
-              </div>
-            </div>
-            <div v-else class="detail-empty">暂无商品明细</div>
+            <order-detail-list
+              :details="scope.row.details"
+              :loading="detailLoading[scope.$index]"
+              variant="basic"
+            />
           </template>
         </el-table-column>
         <el-table-column label="操作时间" align="left" width="150">
@@ -163,6 +155,7 @@ import {computed, getCurrentInstance, reactive, ref, toRefs} from "vue";
 import {useWmsStore} from "../../../../store/modules/wms";
 import {ElMessageBox} from "element-plus";
 import movementPanel from "@/components/PrintTemplate/movement-panel";
+import OrderDetailList from "@/components/Wms/OrderDetailList.vue";
 
 const { proxy } = getCurrentInstance();
 const { wms_movement_status } = proxy.useDict("wms_movement_status");
@@ -322,17 +315,5 @@ getList();
 }
 .el-table .vertical-top-cell {
   vertical-align: top
-}
-.detail-loading,
-.detail-empty {
-  color: #909399;
-}
-.detail-line {
-  line-height: 24px;
-  white-space: nowrap;
-}
-.detail-sep {
-  margin: 0 6px;
-  color: #c0c4cc;
 }
 </style>
